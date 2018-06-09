@@ -1,5 +1,6 @@
 #include <iostream>
 #include <assert.h>
+#include <exception>
 using namespace std;
 
 template <typename T>
@@ -75,9 +76,9 @@ private:
     T *Items;
     int itemCount;
     int maxItems;
-    int getLeftChildIndex(const int nodeIndex);
-    int getRightChieldIndex(int nodeIndex);
-    int getParentIndex(int nodeIndex);
+    int getLeftChildIndex(const int nodeIndex)const;
+    int getRightChildIndex(const int nodeIndex)const;
+    int getParentIndex(const int nodeIndex)const;
     bool isLeaf(int nodeIndex)const;
     void heapRebuild(int subTreeRootIndex);
     void heapCreate();
@@ -102,7 +103,7 @@ public:
     bool isEmpty()const;
     bool add(const T &newEntry);
     bool remove();
-    T peek();
+    T peek()const throw(runtime_error);
 };
 //NODE====================================================================================================
 
@@ -223,6 +224,173 @@ T LinkedQueue<T>::peekFront()const
 }
 
 //LinkedQueue=============================================================================================
+
+//ArrayMaxHeap============================================================================================
+
+template <typename T>
+int ArrayMaxHeap<T>::getLeftChildIndex(const int nodeIndex)const
+{
+    return (2*nodeIndex)+1;
+}
+template <typename T>
+int ArrayMaxHeap<T>::getRightChildIndex(const int nodeIndex)const
+{
+	return (2*nodeIndex)+2;
+}
+template <typename T>
+int ArrayMaxHeap<T>::getParentIndex(const int nodeIndex) const
+{
+	return (nodeIndex-1)/2;
+}
+template <typename T>
+bool ArrayMaxHeap<T>::isLeaf(int nodeIndex) const
+{
+	if (!(getLeftChildIndex(nodeIndex)<itemCount)&&!(getRightChildIndex(nodeIndex)<itemCount))
+		return true;
+	else
+		return false;
+}
+template <typename T>
+void ArrayMaxHeap<T>::heapRebuild(int subTreeRootIndex)
+{
+	if (!isLeaf(subTreeRootIndex))
+	{
+		int largerChildIndex=2*subTreeRootIndex+1;
+
+		if(getRightChildIndex(subTreeRootIndex)!=0)
+		{
+			int rightChildIndex=largerChildIndex+1;
+			if (Items[rightChildIndex]>Items[largerChildIndex])
+				largerChildIndex=rightChildIndex;
+		}
+		if(Items[subTreeRootIndex]<=Items[largerChildIndex])
+		{
+            swap(Items[subTreeRootIndex],Items[largerChildIndex]);
+			heapRebuild(largerChildIndex);
+		}
+	}
+}
+template <typename T>
+void ArrayMaxHeap<T>::heapCreate()
+{
+   for (int index=itemCount/2;index>=0;index--)
+   {
+      heapRebuild(index);
+   }
+}
+template <typename T>
+ArrayMaxHeap<T>::ArrayMaxHeap():itemCount(0),maxItems(DEFAULT_CAPACITY)
+{
+	Items=new T[maxItems];
+}
+template <typename T>
+ArrayMaxHeap<T>::ArrayMaxHeap(const T someArray[],const int arraySize):itemCount(arraySize),maxItems(2*arraySize)
+{
+   Items=new T[2*arraySize];
+   for (int i=0;i<itemCount;i++)
+      Items[i] = someArray[i];
+   heapCreate();
+}
+template <typename T>
+ArrayMaxHeap<T>::~ArrayMaxHeap()
+{
+	delete[] Items;
+}
+template <typename T>
+bool ArrayMaxHeap<T>::isEmpty()const
+{
+	if(itemCount==0)
+        return true;
+	else
+		return false;
+}
+template <typename T>
+int ArrayMaxHeap<T>::getNumberOfNodes()const
+{
+	return itemCount+1;
+}
+template <typename T>
+int ArrayMaxHeap<T>::getHeight()const
+{
+	return ceil(log2(itemCount+1));
+}
+template <typename T>
+T ArrayMaxHeap<T>::peekTop()const
+{
+   assert(isEmpty());
+   return Items[0];
+}
+template <typename T>
+bool ArrayMaxHeap<T>::add(const T& newData)
+{
+	if (itemCount==maxItems)
+		return false;
+	Items[itemCount]=newData;
+	int newDataIndex=itemCount;
+	bool inPlace=false;
+	while(newDataIndex>0&&!inPlace)
+	{
+		int parentIndex=(newDataIndex-1)/2;
+		if (Items[newDataIndex]<=Items[parentIndex])
+			inPlace=true;
+		else
+		{
+			swap(Items[newDataIndex],Items[parentIndex]);
+			newDataIndex=parentIndex;
+		}
+	}
+	itemCount++;
+	return true;
+}
+template <typename T>
+bool ArrayMaxHeap<T>::remove()
+{
+	if(isEmpty())
+		return false;
+	Items[0]=Items[itemCount-1];
+	itemCount--;
+	heapRebuild(0);
+	return true;
+}
+template <typename T>
+void ArrayMaxHeap<T>::clear()
+{
+	itemCount=0;
+}
+
+//ArrayMaxHeap============================================================================================
+
+//Heap_PriorityQueue======================================================================================
+
+template <typename T>
+bool Heap_PriorityQueue<T>::isEmpty()const
+{
+    return ArrayMaxHeap<T>::isEmpty();
+}
+template <typename T>
+bool Heap_PriorityQueue<T>::add(const T &newEntry)
+{
+    return ArrayMaxHeap<T>::add(newEntry);
+}
+template <typename T>
+bool Heap_PriorityQueue<T>::remove()
+{
+    return ArrayMaxHeap<T>::remove();
+}
+template <typename T>
+T Heap_PriorityQueue<T>::peek()const throw(runtime_error)
+{
+    try
+    {
+        return ArrayMaxHeap<T>::peekTop();
+    }
+    catch(runtime_error e)
+    {
+        throw runtime_error("Attemped peek into an empty priority queue.");
+    }
+}
+
+//Heap_PriorityQueue======================================================================================
 
 int main()
 {
