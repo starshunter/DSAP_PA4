@@ -1,6 +1,8 @@
 #include <iostream>
 #include <assert.h>
 #include <exception>
+#include <cmath>
+#include <string>
 using namespace std;
 
 template <typename T>
@@ -48,7 +50,7 @@ class HeapInterface
     virtual T peekTop()const=0;
     virtual bool add(const T &newData)=0;
     virtual bool remove()=0;
-    virtual bool clear()=0;
+    virtual void clear()=0;
 };
 
 template <typename T>
@@ -104,6 +106,17 @@ public:
     bool add(const T &newEntry);
     bool remove();
     T peek()const throw(runtime_error);
+};
+
+class Customer
+{
+public:
+    string name;
+    int start_time;
+    int end_time;
+    int time_need;
+    Customer();
+    Customer(string name,int start_time,int time_need);
 };
 //NODE====================================================================================================
 
@@ -235,132 +248,135 @@ int ArrayMaxHeap<T>::getLeftChildIndex(const int nodeIndex)const
 template <typename T>
 int ArrayMaxHeap<T>::getRightChildIndex(const int nodeIndex)const
 {
-	return (2*nodeIndex)+2;
+    return (2*nodeIndex)+2;
 }
 template <typename T>
 int ArrayMaxHeap<T>::getParentIndex(const int nodeIndex) const
 {
-	return (nodeIndex-1)/2;
+    return (nodeIndex-1)/2;
 }
 template <typename T>
 bool ArrayMaxHeap<T>::isLeaf(int nodeIndex) const
 {
-	if (!(getLeftChildIndex(nodeIndex)<itemCount)&&!(getRightChildIndex(nodeIndex)<itemCount))
-		return true;
-	else
-		return false;
+    if (!(getLeftChildIndex(nodeIndex)<itemCount)&&!(getRightChildIndex(nodeIndex)<itemCount))
+        return true;
+    else
+        return false;
 }
 template <typename T>
 void ArrayMaxHeap<T>::heapRebuild(int subTreeRootIndex)
 {
-	if (!isLeaf(subTreeRootIndex))
-	{
-		int largerChildIndex=2*subTreeRootIndex+1;
+    if (!isLeaf(subTreeRootIndex))
+    {
+        int largerChildIndex=2*subTreeRootIndex+1;
 
-		if(getRightChildIndex(subTreeRootIndex)!=0)
-		{
-			int rightChildIndex=largerChildIndex+1;
-			if (Items[rightChildIndex]>Items[largerChildIndex])
-				largerChildIndex=rightChildIndex;
-		}
-		if(Items[subTreeRootIndex]<=Items[largerChildIndex])
-		{
+        if(getRightChildIndex(subTreeRootIndex)!=0)
+        {
+            int rightChildIndex=largerChildIndex+1;
+            if (Items[rightChildIndex]>Items[largerChildIndex])
+                largerChildIndex=rightChildIndex;
+        }
+        if(Items[subTreeRootIndex]<=Items[largerChildIndex])
+        {
             swap(Items[subTreeRootIndex],Items[largerChildIndex]);
-			heapRebuild(largerChildIndex);
-		}
-	}
+            heapRebuild(largerChildIndex);
+        }
+    }
 }
 template <typename T>
 void ArrayMaxHeap<T>::heapCreate()
 {
-   for (int index=itemCount/2;index>=0;index--)
-   {
-      heapRebuild(index);
-   }
+    for (int index=itemCount/2;index>=0;index--)
+    {
+        heapRebuild(index);
+    }
 }
 template <typename T>
 ArrayMaxHeap<T>::ArrayMaxHeap():itemCount(0),maxItems(DEFAULT_CAPACITY)
 {
-	Items=new T[maxItems];
+    Items=new T[maxItems];
 }
 template <typename T>
 ArrayMaxHeap<T>::ArrayMaxHeap(const T someArray[],const int arraySize):itemCount(arraySize),maxItems(2*arraySize)
 {
-   Items=new T[2*arraySize];
-   for (int i=0;i<itemCount;i++)
-      Items[i] = someArray[i];
-   heapCreate();
+    Items=new T[2*arraySize];
+    for (int i=0;i<itemCount;i++)
+        Items[i] = someArray[i];
+    heapCreate();
 }
 template <typename T>
 ArrayMaxHeap<T>::~ArrayMaxHeap()
 {
-	delete[] Items;
+    delete[] Items;
 }
 template <typename T>
 bool ArrayMaxHeap<T>::isEmpty()const
 {
-	if(itemCount==0)
+    if(itemCount==0)
         return true;
-	else
-		return false;
+    else
+        return false;
 }
 template <typename T>
 int ArrayMaxHeap<T>::getNumberOfNodes()const
 {
-	return itemCount+1;
+    return itemCount+1;
 }
 template <typename T>
 int ArrayMaxHeap<T>::getHeight()const
 {
-	return ceil(log2(itemCount+1));
+    return ceil(log2(itemCount+1));
 }
 template <typename T>
 T ArrayMaxHeap<T>::peekTop()const
 {
-   assert(isEmpty());
-   return Items[0];
+    assert(!isEmpty());
+    return Items[0];
 }
 template <typename T>
 bool ArrayMaxHeap<T>::add(const T& newData)
 {
-	if (itemCount==maxItems)
-		return false;
-	Items[itemCount]=newData;
-	int newDataIndex=itemCount;
-	bool inPlace=false;
-	while(newDataIndex>0&&!inPlace)
-	{
-		int parentIndex=(newDataIndex-1)/2;
-		if (Items[newDataIndex]<=Items[parentIndex])
-			inPlace=true;
-		else
-		{
-			swap(Items[newDataIndex],Items[parentIndex]);
-			newDataIndex=parentIndex;
-		}
-	}
-	itemCount++;
-	return true;
+    if (itemCount==maxItems)
+        return false;
+    Items[itemCount]=newData;
+    int newDataIndex=itemCount;
+    bool inPlace=false;
+    while(newDataIndex>0&&!inPlace)
+    {
+        int parentIndex=(newDataIndex-1)/2;
+        if (Items[newDataIndex]<=Items[parentIndex])
+            inPlace=true;
+        else
+        {
+            swap(Items[newDataIndex],Items[parentIndex]);
+            newDataIndex=parentIndex;
+        }
+    }
+    itemCount++;
+    return true;
 }
 template <typename T>
 bool ArrayMaxHeap<T>::remove()
 {
-	if(isEmpty())
-		return false;
-	Items[0]=Items[itemCount-1];
-	itemCount--;
-	heapRebuild(0);
-	return true;
+    if(isEmpty())
+        return false;
+    Items[0]=Items[itemCount-1];
+    itemCount--;
+    heapRebuild(0);
+    return true;
 }
 template <typename T>
 void ArrayMaxHeap<T>::clear()
 {
-	itemCount=0;
+    itemCount=0;
 }
 
 //ArrayMaxHeap============================================================================================
 
 //Heap_PriorityQueue======================================================================================
+
+template <typename T>
+Heap_PriorityQueue<T>::Heap_PriorityQueue():PriorityQueueInterface<T>(),ArrayMaxHeap<T>(){}
 
 template <typename T>
 bool Heap_PriorityQueue<T>::isEmpty()const
@@ -392,7 +408,29 @@ T Heap_PriorityQueue<T>::peek()const throw(runtime_error)
 
 //Heap_PriorityQueue======================================================================================
 
+//Customer================================================================================================
+
+
+
+//Customer================================================================================================
 int main()
 {
+    int n,m;
+    cin>>m>>n;
+    LinkedQueue<Customer> *normal,*business;
+    bool *normal_counter,*business_counter;
+    normal=new LinkedQueue<Customer>[m];
+    business=new LinkedQueue<Customer>[n];
+    normal_counter=new bool[m];
+    business_counter=new bool[n];
+    for(int i=0;i<m;i++)
+        normal_counter[i]=false;
+    for(int i=0;i<n;i++)
+        business_counter[i]=false;
+    string statement;
+    while(getline(cin,statement))
+    {
+        
+    }
     return 0;
 }
