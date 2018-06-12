@@ -1,0 +1,5 @@
+Undefined symbols for architecture x86_64:
+  "time_to_second(std::__1::basic_string<char, std::__1::char_traits<char>, std::__1::allocator<char> >)", referenced from:
+      _main in DSAP_PA4-806c5f.o
+ld: symbol(s) not found for architecture x86_64
+clang: error: linker command failed with exit code 1 (use -v to see invocation)

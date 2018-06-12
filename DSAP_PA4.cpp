@@ -2,8 +2,12 @@
 #include <assert.h>
 #include <exception>
 #include <cmath>
+#include <cstring>
 #include <string>
+
 using namespace std;
+
+int time_to_second(char t[]);
 
 template <typename T>
 class Node
@@ -59,6 +63,7 @@ class LinkedQueue:public QueueInterface<T>
 private:
     Node<T> *backPtr;
     Node<T> *frontPtr;
+    int size;
 public:
     LinkedQueue();
     LinkedQueue(const LinkedQueue &aQueue);
@@ -67,6 +72,7 @@ public:
     bool enqueue(const T &newEntry);
     bool dequeue();
     T peekFront()const;
+    int get_size()const;
 };
 
 template <typename T>
@@ -115,8 +121,23 @@ public:
     int start_time;
     int end_time;
     int time_need;
+    bool business;
     Customer();
-    Customer(string name,int start_time,int time_need);
+    Customer(string name,int start_time,int time_need,bool business);
+};
+
+class Event
+{
+public:
+    string name;
+    int left_time;
+    Event();
+    Event(string name,int left_time);
+    bool operator>(const Event &ev);
+    bool operator<(const Event &ev);
+    bool operator>=(const Event &ev);
+    bool operator<=(const Event &ev);
+    bool operator==(const Event &ev);
 };
 //NODE====================================================================================================
 
@@ -155,7 +176,7 @@ Node<T>* Node<T>::getNext()const
 //LinkedQueue=============================================================================================
 
 template <typename T>
-LinkedQueue<T>::LinkedQueue():frontPtr(nullptr),backPtr(nullptr){}
+LinkedQueue<T>::LinkedQueue():frontPtr(nullptr),backPtr(nullptr),size(0){}
 template <typename T>
 LinkedQueue<T>::LinkedQueue(const LinkedQueue &aQueue)
 {
@@ -182,6 +203,7 @@ LinkedQueue<T>::LinkedQueue(const LinkedQueue &aQueue)
         newChainPtr->setNext(nullptr);
         backPtr=newChainPtr;
     }
+    this->size=aQueue.size;
 }
 template <typename T>
 LinkedQueue<T>::~LinkedQueue()
@@ -190,6 +212,7 @@ LinkedQueue<T>::~LinkedQueue()
     {
         dequeue();
     }
+    size=0;
     assert((backPtr==nullptr)&&(frontPtr==nullptr));
 }
 template <typename T>
@@ -206,6 +229,7 @@ bool LinkedQueue<T>::enqueue(const T &newEntry)
     else
         backPtr->setNext(newNodePtr);
     backPtr=newNodePtr;
+    size++;
     return true;
 }
 template <typename T>
@@ -226,6 +250,7 @@ bool LinkedQueue<T>::dequeue()
         delete nodeToDeletePtr;
         nodeToDeletePtr=nullptr;
         result=true;
+        size--;
     }
     return result;
 }
@@ -234,6 +259,11 @@ T LinkedQueue<T>::peekFront()const
 {
     assert(!isEmpty());
     return frontPtr->getItem();
+}
+template <typename T>
+int LinkedQueue<T>::get_size()const
+{
+    return size;
 }
 
 //LinkedQueue=============================================================================================
@@ -410,27 +440,161 @@ T Heap_PriorityQueue<T>::peek()const throw(runtime_error)
 
 //Customer================================================================================================
 
+Customer::Customer():name(""),start_time(0),end_time(0),time_need(0),business(false){}
 
+Customer::Customer(string name,int start_time,int time_need,bool business)
+{
+    this->name=name;
+    this->start_time=start_time;
+    this->time_need=time_need;
+    this->business=business;
+}
 
 //Customer================================================================================================
+
+//Event===================================================================================================
+
+Event::Event():name(""),left_time(0){}
+
+Event::Event(string name,int left_time)
+{
+    this->name=name;
+    this->left_time=left_time;
+}
+
+bool Event::operator>(const Event &ev)
+{
+    return(this->left_time>ev.left_time);
+}
+
+bool Event::operator<(const Event &ev)
+{
+    return(this->left_time<ev.left_time);
+}
+
+bool Event::operator>=(const Event &ev)
+{
+    return(this->left_time>=ev.left_time);
+}
+
+bool Event::operator<=(const Event &ev)
+{
+    return(this->left_time<=ev.left_time);
+}
+
+bool Event::operator==(const Event &ev)
+{
+    return(this->left_time==ev.left_time);
+}
+
+//Event===================================================================================================
 int main()
 {
     int n,m;
     cin>>m>>n;
-    LinkedQueue<Customer> *normal,*business;
+    LinkedQueue<Customer> *normal_line,*business_line;
+    Heap_PriorityQueue<Event> event_list;
     bool *normal_counter,*business_counter;
-    normal=new LinkedQueue<Customer>[m];
-    business=new LinkedQueue<Customer>[n];
+    normal_line=new LinkedQueue<Customer>[m];
+    business_line=new LinkedQueue<Customer>[n];
     normal_counter=new bool[m];
     business_counter=new bool[n];
     for(int i=0;i<m;i++)
         normal_counter[i]=false;
     for(int i=0;i<n;i++)
         business_counter[i]=false;
-    string statement;
-    while(getline(cin,statement))
+    char statement[1000]={0};
+    cin.get();
+    while(cin.getline(statement,sizeof(statement)))
     {
-        
+        char *cut=nullptr;
+        int start_time;
+        string code,name;
+        cut=strtok(statement," ");
+        start_time=time_to_second(cut);
+        cut=strtok(NULL," ");
+        code=cut;
+        if(!code.compare("A"))
+        {
+            string type;
+            int time_need;
+            bool business=true;
+            cut=strtok(NULL," ");
+            name=cut;
+            cut=strtok(NULL," ");
+            type=cut;
+            cut=strtok(NULL," ");
+            time_need=stoi(cut);
+            if(type.compare("B"))
+                business=false;
+            Customer cus(name,start_time,time_need,business);
+            int short_lengh=1000000,short_id=-1;
+            for(int i=0;i<n+m;i++)
+            {
+                if(!cus.business&&i<m)
+                    continue;
+                int num=0;
+                if(i>=m)
+                {
+                    num+=normal_line[i-m].get_size();
+                    if(normal_counter[i-m])
+                        num++;
+                }
+                else
+                {
+                    num+=business_line[i].get_size();
+                    if(business_counter[i])
+                        num++;
+                }
+                if(num<short_lengh)
+                    short_lengh=num,short_id=i;
+            }
+            if(short_id>=m)
+            {
+                short_id-=m;
+                normal_line[short_id].enqueue(cus);
+                if(!normal_counter[short_id])
+                {
+                    normal_counter[short_id]=true;
+                    Event ev(name,start_time+time_need);
+                    event_list.add(ev);
+                }
+            }
+            else
+            {
+                business_line[short_id].enqueue(cus);
+                if(!business_counter[short_id])
+                {
+                    business_counter[short_id]=true;
+                    Event ev(name,start_time+time_need);
+                    event_list.add(ev);
+                }
+            }
+
+        }
+        else if(!code.compare("D"))
+        {
+            cut=strtok(NULL," ");
+            name=cut;
+        }
+        else
+        {
+            cut=strtok(NULL," ");
+            name=cut;
+        }
     }
     return 0;
+}
+
+int time_to_second(char t[])
+{
+    char *c=nullptr;
+    int h,m,s;
+    c=strtok(t,":");
+    h=stoi(c);
+    c=strtok(NULL,":");
+    m=stoi(c);
+    c=strtok(NULL,":");
+    s=stoi(c);
+    return 3600*h+60*m+s;
 }
