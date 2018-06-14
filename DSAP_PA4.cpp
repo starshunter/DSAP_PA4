@@ -81,7 +81,7 @@ class ArrayMaxHeap:public HeapInterface<T>
 {
 private:
     static const int ROOT_INDEX=0;
-    static const int DEFAULT_CAPACITY=21;
+    static const int DEFAULT_CAPACITY=210000;
     T *Items;
     int itemCount;
     int maxItems;
@@ -455,18 +455,29 @@ Customer::Customer(string name,int arrive_time,int time_need,bool business)
 {
     this->name=name;
     this->arrive_time=arrive_time;
-    this->start_time=start_time;
+    this->start_time=0;
     this->time_need=time_need;
     this->business=business;
     this->wait=0;
+    this->end_time=0;
 }
 bool Customer::operator>(const Customer &c)
 {
-    return(this->end_time>c.end_time);
+    if(this->end_time>c.end_time)
+        return true;
+    if(this->end_time==c.end_time)
+        if(this->arrive_time>c.arrive_time)
+            return true;
+    return false;
 }
 bool Customer::operator<(const Customer &c)
 {
-    return(this->end_time<c.end_time);
+    if(this->end_time<c.end_time)
+        return true;
+    if(this->end_time==c.end_time)
+        if(this->arrive_time<c.arrive_time)
+            return true;
+    return false;
 }
 bool Customer::operator>=(const Customer &c)
 {
@@ -520,6 +531,7 @@ bool Event::operator==(const Event &ev)
 }
 
 //Event===================================================================================================
+
 int main()
 {
     int n,m,total_time=0,customer_num=0;
@@ -541,15 +553,19 @@ int main()
         normal_counter[i]=false;
     for(int i=0;i<n;i++)
         business_counter[i]=false;
+
     char statement[1000]={0};
+
     cin.get();
     while(cin.getline(statement,sizeof(statement)))
     {
         if(strlen(statement)==0)
             break;
+
         char *cut=nullptr;
         int arrive_time;
         char *code,*name;
+
         cut=strtok(statement," ");
         string st=cut;
         arrive_time=time_to_second(st);
@@ -558,50 +574,53 @@ int main()
         {
             while(arrive_time>=event_list.peek().left_time)
             {
+                Event ev=event_list.peek();
                 for(int i=0;i<m+n;i++)
                 {
                     if(i<n)
                     {
-                        if(business_counter[i]&&!business_line[i].peekFront().name.compare(event_list.peek().name))
+                        if(business_counter[i]&&!business_line[i].peekFront().name.compare(ev.name))
                         {
                             Customer temp=business_line[i].peekFront();
-                            temp.wait+=event_list.peek().start_time-temp.arrive_time;
+                            temp.wait+=ev.start_time-temp.arrive_time;
                             total_time+=temp.wait;
                             business_line[i].dequeue();
                             customer_num++;
-                            temp.start_time=event_list.peek().start_time;
-                            temp.end_time=event_list.peek().left_time;
+                            temp.start_time=ev.start_time;
+                            temp.end_time=ev.left_time;
                             customer_list.add(temp);
                             event_list.remove();
                             if(!business_line[i].isEmpty())
                             {
-                                Event ev(business_line[i].peekFront().name,temp.end_time,temp.end_time+business_line[i].peekFront().time_need);
-                                event_list.add(ev);
+                                Event new_ev(business_line[i].peekFront().name,temp.end_time,temp.end_time+business_line[i].peekFront().time_need);
+                                event_list.add(new_ev);
                             }
                             else
                                 business_counter[i]=false;
+                            break;
                         }
                     }
                     else
                     {
-                        if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(event_list.peek().name))
+                        if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(ev.name))
                         {
                             Customer temp=normal_line[i-n].peekFront();
-                            temp.wait+=event_list.peek().start_time-temp.arrive_time;
+                            temp.wait+=ev.start_time-temp.arrive_time;
                             total_time+=temp.wait;
                             normal_line[i-n].dequeue();
                             customer_num++;
-                            temp.start_time=event_list.peek().start_time;
-                            temp.end_time=event_list.peek().left_time;
+                            temp.start_time=ev.start_time;
+                            temp.end_time=ev.left_time;
                             customer_list.add(temp);
                             event_list.remove();
                             if(!normal_line[i-n].isEmpty())
                             {
-                                Event ev(normal_line[i-n].peekFront().name,temp.end_time,temp.end_time+normal_line[i-n].peekFront().time_need);
-                                event_list.add(ev);
+                                Event new_ev(normal_line[i-n].peekFront().name,temp.end_time,temp.end_time+normal_line[i-n].peekFront().time_need);
+                                event_list.add(new_ev);
                             }
                             else
                                 normal_counter[i-n]=false;
+                            break;
                         }
                     }
                 }
@@ -629,9 +648,9 @@ int main()
                     continue;
                 int num=0;
                 if(i>=n)
-                    num+=normal_line[i-n].get_size();
+                    num=normal_line[i-n].get_size();
                 else
-                    num+=business_line[i].get_size();
+                    num=business_line[i].get_size();
                 if(num<short_lengh)
                     short_lengh=num,short_id=i;
             }
@@ -662,69 +681,221 @@ int main()
         }
         else if(!strcmp(code,"D"))
         {
-            cut=strtok(NULL," ");
-            name=cut;
+            name=strtok(NULL," ");
+            bool found=false;
+            for(int i=0;i<m+n;i++)
+            {
+                if(i<n&&!found)
+                {
+                    int size=business_line[i].get_size();
+                    for(int j=0;j<size;j++)
+                    {
+                        if(business_line[i].peekFront().name.compare(name))
+                            business_line[i].enqueue(business_line[i].peekFront());
+                        else if(!business_line[i].peekFront().name.compare(name)&&j==0)
+                        {
+                            found=true;
+                            business_line[i].enqueue(business_line[i].peekFront());
+                        }
+                        else
+                        {
+                            found=true;
+                            total_time+=arrive_time-business_line[i].peekFront().arrive_time;
+                            customer_num++;
+                        }
+                        business_line[i].dequeue();
+                    }
+                }
+                else if(i>=n&&!found)
+                {
+                    int size=normal_line[i-n].get_size();
+                    for(int j=0;j<size;j++)
+                    {
+                        if(normal_line[i-n].peekFront().name.compare(name))
+                            normal_line[i-n].enqueue(normal_line[i-n].peekFront());
+                        else if(normal_line[i-n].peekFront().name.compare(name)&&j==0)
+                        {
+                            found=true;
+                            normal_line[i-n].enqueue(normal_line[i-n].peekFront());
+                        }
+                        else
+                        {
+                            found=true;
+                            total_time+=arrive_time-normal_line[i-n].peekFront().arrive_time;
+                            customer_num++;
+                        }
+                        normal_line[i-n].dequeue();
+                    }
+                }
+            }
         }
         else
         {
+            name=strtok(NULL," ");
+            bool found=false;
+            int line;
             cut=strtok(NULL," ");
-            name=cut;
+            line=stoi(cut);
+            for(int i=0;i<m+n;i++)
+            {
+                if(i<n&&!found)
+                {
+                    int size=business_line[i].get_size();
+                    for(int j=0;j<size;j++)
+                    {
+                        if(business_line[i].peekFront().name.compare(name))
+                            business_line[i].enqueue(business_line[i].peekFront());
+                        else if(!business_line[i].peekFront().name.compare(name)&&j==0)
+                        {
+                            found=true;
+                            business_line[i].enqueue(business_line[i].peekFront());
+                        }
+                        else
+                        {
+                            found=true;
+                            int x=business_line[i].get_size(),y;
+                            if(line>=n)
+                                y=normal_line[line-n].get_size();
+                            else
+                                y=business_line[i].get_size();
+                            if(x<=y)
+                                continue;
+                            Customer temp=business_line[i].peekFront();
+                            temp.wait+=arrive_time-business_line[i].peekFront().arrive_time;
+                            temp.arrive_time=arrive_time;
+                            Event new_ev(temp.name,arrive_time,arrive_time+temp.time_need);
+                            if(line>=n)
+                            {
+                                if(normal_line[line-n].get_size()==0)
+                                {
+                                    event_list.add(new_ev);
+                                    normal_counter[line-n]=true;
+                                }
+                                normal_line[line-n].enqueue(temp);
+                            }
+                            else
+                            {
+                                if(business_line[line].get_size()==0)
+                                {
+                                    event_list.add(new_ev);
+                                    business_counter[line]=true;
+                                }
+                                business_line[line].enqueue(temp);
+                            }
+                        }
+                        business_line[i].dequeue();
+                    }
+                }
+                else if(i>=n&&!found)
+                {
+                    int size=normal_line[i-n].get_size();
+                    for(int j=0;j<size;j++)
+                    {
+                        if(normal_line[i-n].peekFront().name.compare(name))
+                            normal_line[i-n].enqueue(normal_line[i-n].peekFront());
+                        else if(normal_line[i-n].peekFront().name.compare(name)&&j==0)
+                        {
+                            found=true;
+                            normal_line[i-n].enqueue(normal_line[i-n].peekFront());
+                        }
+                        else
+                        {
+                            found=true;
+                            int x=normal_line[i-n].get_size(),y;
+                            if(line>=n)
+                                y=normal_line[line-n].get_size();
+                            else
+                                y=business_line[i].get_size();
+                            if(x<=y)
+                                continue;
+                            if(!normal_line[i-n].peekFront().business&&line<n)
+                                continue;
+                            Customer temp=normal_line[i-n].peekFront();
+                            temp.wait+=arrive_time-normal_line[i-n].peekFront().arrive_time;
+                            temp.arrive_time=arrive_time;
+                            Event new_ev(temp.name,arrive_time,arrive_time+temp.time_need);
+                            if(line>=n)
+                            {
+                                if(normal_line[line-n].get_size()==0)
+                                {
+                                    event_list.add(new_ev);
+                                    normal_counter[line-n]=true;
+                                }
+                                normal_line[line-n].enqueue(temp);
+                            }
+                            else
+                            {
+                                if(business_line[line].get_size()==0)
+                                {
+                                    event_list.add(new_ev);
+                                    business_counter[line]=true;
+                                }
+                                business_line[line].enqueue(temp);
+                            }
+                        }
+                        normal_line[i-n].dequeue();
+                    }
+                }
+            }
         }
     }
     if(!event_list.isEmpty())
     {
         while(!event_list.isEmpty())
         {
+            Event ev=event_list.peek();
             for(int i=0;i<m+n;i++)
             {
                 if(i<n)
                 {
-                    if(business_counter[i]&&!business_line[i].peekFront().name.compare(event_list.peek().name))
+                    if(business_counter[i]&&!business_line[i].peekFront().name.compare(ev.name))
                     {
                         Customer temp=business_line[i].peekFront();
-                        temp.wait+=event_list.peek().start_time-temp.arrive_time;
+                        temp.wait+=ev.start_time-temp.arrive_time;
                         total_time+=temp.wait;
                         business_line[i].dequeue();
                         customer_num++;
-                        temp.start_time=event_list.peek().start_time;
-                        temp.end_time=event_list.peek().left_time;
+                        temp.start_time=ev.start_time;
+                        temp.end_time=ev.left_time;
                         customer_list.add(temp);
                         if(!business_line[i].isEmpty())
                         {
-                            Event ev(business_line[i].peekFront().name,event_list.peek().left_time,event_list.peek().left_time+business_line[i].peekFront().time_need);
+                            Event new_ev(business_line[i].peekFront().name,ev.left_time,ev.left_time+business_line[i].peekFront().time_need);
                             event_list.remove();
-                            event_list.add(ev);
+                            event_list.add(new_ev);
                         }
                         else
                         {
                             business_counter[i]=false;
                             event_list.remove();
                         }
+                        break;
                     }
                 }
                 else
                 {
-                    if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(event_list.peek().name))
+                    if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(ev.name))
                     {
                         Customer temp=normal_line[i-n].peekFront();
-                        temp.wait+=event_list.peek().start_time-temp.arrive_time;
+                        temp.wait+=ev.start_time-temp.arrive_time;
                         total_time+=temp.wait;
                         normal_line[i-n].dequeue();
                         customer_num++;
-                        temp.start_time=event_list.peek().start_time;
-                        temp.end_time=event_list.peek().left_time;
+                        temp.start_time=ev.start_time;
+                        temp.end_time=ev.left_time;
                         customer_list.add(temp);
                         if(!normal_line[i-n].isEmpty())
                         {
-                            Event ev(normal_line[i-n].peekFront().name,event_list.peek().left_time,event_list.peek().left_time+normal_line[i-n].peekFront().time_need);
+                            Event new_ev(normal_line[i-n].peekFront().name,ev.left_time,ev.left_time+normal_line[i-n].peekFront().time_need);
                             event_list.remove();
-                            event_list.add(ev);
+                            event_list.add(new_ev);
                         }
                         else
                         {
                             normal_counter[i-n]=false;
                             event_list.remove();
                         }
+                        break;
                     }
                 }
             }
