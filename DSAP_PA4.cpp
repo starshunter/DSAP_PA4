@@ -11,7 +11,7 @@ int time_to_second(string t);
 string second_to_time(int t);
 
 template <typename T>
-class Node
+class Node//Node
 {
 private:
     T item;
@@ -27,7 +27,7 @@ public:
 };
 
 template <typename T>
-class QueueInterface
+class QueueInterface//QueueInterface
 {
 public:
     virtual bool isEmpty()const=0;
@@ -37,7 +37,7 @@ public:
 };
 
 template <typename T>
-class PriorityQueueInterface
+class PriorityQueueInterface//PriorityQueueInterface
 {
 public:
     virtual bool isEmpty()const=0;
@@ -47,7 +47,7 @@ public:
 };
 
 template <typename T>
-class HeapInterface
+class HeapInterface//HeapInterface
 {
     virtual bool isEmpty()const=0;
     virtual int getNumberOfNodes()const=0;
@@ -59,7 +59,7 @@ class HeapInterface
 };
 
 template <typename T>
-class LinkedQueue:public QueueInterface<T>
+class LinkedQueue:public QueueInterface<T>//LinkedQueue
 {
 private:
     Node<T> *backPtr;
@@ -69,15 +69,15 @@ public:
     LinkedQueue();
     LinkedQueue(const LinkedQueue &aQueue);
     ~LinkedQueue();
-    bool isEmpty()const;
-    bool enqueue(const T &newEntry);
-    bool dequeue();
-    T peekFront()const;
-    int get_size()const;
+    bool isEmpty()const;//chech if empty
+    bool enqueue(const T &newEntry);//put item into queue
+    bool dequeue();//pop out an item
+    T peekFront()const;//see the item in the front
+    int get_size()const;//get the size of queue
 };
 
 template <typename T>
-class ArrayMaxHeap:public HeapInterface<T>
+class ArrayMaxHeap:public HeapInterface<T>//ArrayMaxHeap
 {
 private:
     static const int ROOT_INDEX=0;
@@ -85,27 +85,27 @@ private:
     T *Items;
     int itemCount;
     int maxItems;
-    int getLeftChildIndex(const int nodeIndex)const;
-    int getRightChildIndex(const int nodeIndex)const;
+    int getLeftChildIndex(const int nodeIndex)const;//2n+1
+    int getRightChildIndex(const int nodeIndex)const;//2n+2
     int getParentIndex(const int nodeIndex)const;
-    bool isLeaf(int nodeIndex)const;
-    void heapRebuild(int subTreeRootIndex);
+    bool isLeaf(int nodeIndex)const;//check the node is leaf
+    void heapRebuild(int subTreeRootIndex);//rebuild the heap
     void heapCreate();
 public:
     ArrayMaxHeap();
     ArrayMaxHeap(const T someArray[],const int arraySize);
     virtual ~ArrayMaxHeap();
-    bool isEmpty()const;
-    int getNumberOfNodes()const;
-    int getHeight()const;
-    T peekTop()const;
-    bool add(const T &newData);
-    bool remove();
-    void clear();
+    bool isEmpty()const;//check if empty
+    int getNumberOfNodes()const;//get number of nodes
+    int getHeight()const;//the height
+    T peekTop()const;//see the item on the top
+    bool add(const T &newData);//add new item
+    bool remove();//remove the top item
+    void clear();//clear all item
 };
 
 template <typename T>
-class Heap_PriorityQueue:public PriorityQueueInterface<T>,private ArrayMaxHeap<T>
+class Heap_PriorityQueue:public PriorityQueueInterface<T>,private ArrayMaxHeap<T>//Heap_PriorityQueue
 {
 public:
     Heap_PriorityQueue();
@@ -115,7 +115,7 @@ public:
     T peek()const throw(runtime_error);
 };
 
-class Customer
+class Customer//Customer
 {
 public:
     string name;
@@ -570,14 +570,14 @@ int main()
         string st=cut;
         arrive_time=time_to_second(st);
 
-        if(!event_list.isEmpty())
+        if(!event_list.isEmpty())                               //handle event list
         {
             while(arrive_time>=event_list.peek().left_time)
             {
                 Event ev=event_list.peek();
                 for(int i=0;i<m+n;i++)
                 {
-                    if(i<n)
+                    if(i<n)                                     //business counter
                     {
                         if(business_counter[i]&&!business_line[i].peekFront().name.compare(ev.name))
                         {
@@ -600,7 +600,7 @@ int main()
                             break;
                         }
                     }
-                    else
+                    else                                        //normal counter
                     {
                         if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(ev.name))
                         {
@@ -629,11 +629,12 @@ int main()
             }
         }
         code=strtok(NULL," ");
-        if(!strcmp(code,"A"))
+        if(!strcmp(code,"A"))                                       //arrival event
         {
             char *type;
             int time_need;
             bool business=true;
+
             name=strtok(NULL," ");
             type=strtok(NULL," ");
             cut=strtok(NULL," ");
@@ -642,7 +643,8 @@ int main()
                 business=false;
             Customer cus(name,arrive_time,time_need,business);
             int short_lengh=1000000,short_id=-1;
-            for(int i=0;i<n+m;i++)
+
+            for(int i=0;i<n+m;i++)                                  //check every counter
             {
                 if(!cus.business&&i<n)
                     continue;
@@ -654,7 +656,8 @@ int main()
                 if(num<short_lengh)
                     short_lengh=num,short_id=i;
             }
-            if(short_id>=n)
+
+            if(short_id>=n)                                         //add to normal counter
             {
                 short_id-=n;
                 if(!normal_counter[short_id])
@@ -666,7 +669,7 @@ int main()
                 }
                 normal_line[short_id].enqueue(cus);
             }
-            else
+            else                                                    //add to busineess counter
             {
                 if(!business_counter[short_id])
                 {
@@ -679,13 +682,15 @@ int main()
             }
 
         }
-        else if(!strcmp(code,"D"))
+
+        else if(!strcmp(code,"D"))                                  //departure event
         {
             name=strtok(NULL," ");
             bool found=false;
+
             for(int i=0;i<m+n;i++)
             {
-                if(i<n&&!found)
+                if(i<n&&!found)                                     //business counter
                 {
                     int size=business_line[i].get_size();
                     for(int j=0;j<size;j++)
@@ -706,7 +711,7 @@ int main()
                         business_line[i].dequeue();
                     }
                 }
-                else if(i>=n&&!found)
+                else if(i>=n&&!found)                               //normal counter
                 {
                     int size=normal_line[i-n].get_size();
                     for(int j=0;j<size;j++)
@@ -729,7 +734,8 @@ int main()
                 }
             }
         }
-        else
+
+        else                                            //change line event
         {
             name=strtok(NULL," ");
             bool found=false;
@@ -839,14 +845,14 @@ int main()
             }
         }
     }
-    if(!event_list.isEmpty())
+    if(!event_list.isEmpty())                                       //the remaining event
     {
         while(!event_list.isEmpty())
         {
             Event ev=event_list.peek();
             for(int i=0;i<m+n;i++)
             {
-                if(i<n)
+                if(i<n)                                             //business counter
                 {
                     if(business_counter[i]&&!business_line[i].peekFront().name.compare(ev.name))
                     {
@@ -872,7 +878,7 @@ int main()
                         break;
                     }
                 }
-                else
+                else                                                //normal counter
                 {
                     if(normal_counter[i-n]&&!normal_line[i-n].peekFront().name.compare(ev.name))
                     {
@@ -903,18 +909,21 @@ int main()
                 break;
         }
     }
-    while(!customer_list.isEmpty())
+
+    while(!customer_list.isEmpty())                                 //print all customer information
     {
         Customer temp=customer_list.peek();
         cout<<temp.name<<" "<<second_to_time(temp.start_time)<<" "<<second_to_time(temp.end_time)<<endl;
         customer_list.remove();
     }
+
     double avg=(double)total_time/customer_num;
     cout<<round(avg)<<endl;
+    
     return 0;
 }
 
-int time_to_second(string t)
+int time_to_second(string t)                                        //change time string into second
 {
     string tt=t;
     int h,m,s;
@@ -924,7 +933,7 @@ int time_to_second(string t)
     return 3600*h+60*m+s;
 }
 
-string second_to_time(int t)
+string second_to_time(int t)                                        //change second to time string
 {
     string time_tag="";
     int h=t/3600;
